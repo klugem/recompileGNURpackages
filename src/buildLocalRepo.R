@@ -323,8 +323,9 @@ getURL <- function(data, cranInfoMeta, cransList, archiveList) {
 	archiveVersions <- sapply(1:length(archiveList), FUN = function(i) { getPackageVersionsFromArchive(archiveList[[i]], package, names(archiveList)[i]) }, simplify=TRUE)
 	keep <- which(sapply(archiveVersions, FUN = function(x) { !is.null(x) }))
 	if(length(keep) > 0) {
-		archiveVersions <- archiveVersions[[keep]]
-		archiveVersions <- data.frame(matrix(unlist(archiveVersions), ncol=3, byrow=F))
+		archiveVersions <- archiveVersions[keep]
+		archiveVersions <- lapply(archiveVersions, as.data.frame)
+		archiveVersions <- do.call("rbind", archiveVersions)
 		colnames(archiveVersions) <- c("version", "base", "source")
 
 		# check if any of these is good in reverse order
