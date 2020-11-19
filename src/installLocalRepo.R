@@ -20,7 +20,7 @@ if(is.null(opt$repoDir)) {
 }
 # ensure that dir does exist
 if(!dir.exists(opt$repoDir)) {
-	print(paste("ERROR: dir '", opt$repoDir,"' does not exist!"), sep="")
+	print(paste("ERROR: dir '", opt$repoDir,"' does not exist!", sep=""))
 	q(status=1)
 }
 THREADS <- 4
@@ -29,7 +29,7 @@ if(!is.null(opt$threads)) { THREADS <- opt$threads }
 if(!is.null(opt$installDir)) { 
 	LIB <- opt$installDir 
 	if(dir.exists(LIB)) {
-		print(paste("ERROR: install dir '", opt$downloadDir,"' does already exist!"), sep="")
+		print(paste("ERROR: install dir '", opt$downloadDir,"' does already exist!", sep=""))
 		q(status=1)
 	} else {
 		dir.create(LIB, recursive = TRUE)

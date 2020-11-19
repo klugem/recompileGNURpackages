@@ -23,7 +23,7 @@ if(is.null(opt$repoDir)) {
 }
 # ensure that dir does not exist
 if(dir.exists(opt$repoDir)) {
-	print(paste("ERROR: dir '", opt$repoDir,"' does already exist!"), sep="")
+	print(paste("ERROR: dir '", opt$repoDir,"' does already exist!", sep=""))
 	q(status=1)
 } else {
 	dir.create(opt$repoDir, recursive = TRUE)
@@ -303,39 +303,44 @@ getURL <- function(data, cranInfoMeta, cransList, archiveList) {
 
 	# test if the version can be found in the meta-data
 	gotPackage <- cranInfoMeta[which(cranInfoMeta$Package == package), ]
-	for(i in 1:nrow(gotPackage)) {
-		d <- gotPackage[i, ]
-		if(compareVersion(data$minV, d$Version) <=0 && compareVersion(data$maxV, d$Version) >= 0) {
-			base <- cransList[[which(names(cransList) == d$source)]]
-			name <- paste(package, "_", d$Version, ".tar.gz", sep="")
-			path <- ""
-			if(!is.na(d$Path)) { path = d$Path }
-			url <- paste(base, "/", path, name, sep="")
-			if(url.exists(url)) {
-				return(c(package, url, d$source))
+	if(nrow(gotPackage) > 0) {
+		for(i in 1:nrow(gotPackage)) {
+			d <- gotPackage[i, ]
+			if(compareVersion(data$minV, d$Version) <=0 && compareVersion(data$maxV, d$Version) >= 0) {
+				base <- cransList[[which(names(cransList) == d$source)]]
+				name <- paste(package, "_", d$Version, ".tar.gz", sep="")
+				path <- ""
+				if(!is.na(d$Path)) { path = d$Path }
+				url <- paste(base, "/", path, name, sep="")
+				if(url.exists(url)) {
+					return(c(package, url, d$source))
+				}
 			}
 		}
 	}
 
 	# if not hit so far - get all versions from the archives
 	archiveVersions <- sapply(1:length(archiveList), FUN = function(i) { getPackageVersionsFromArchive(archiveList[[i]], package, names(archiveList)[i]) }, simplify=TRUE)
-	archiveVersions <- data.frame(matrix(unlist(archiveVersions), ncol=3, byrow=F))
-	colnames(archiveVersions) <- c("version", "base", "source")
+	keep <- which(sapply(archiveVersions, FUN = function(x) { !is.null(x) }))
+	if(length(keep) > 0) {
+		archiveVersions <- archiveVersions[[keep]]
+		archiveVersions <- data.frame(matrix(unlist(archiveVersions), ncol=3, byrow=F))
+		colnames(archiveVersions) <- c("version", "base", "source")
 
-	# check if any of these is good in reverse order
-	for(ii in nrow(archiveVersions):1) {
-		version <- archiveVersions[ii, "version"]
-		if(compareVersion(data$minV, version) <=0 && compareVersion(data$maxV, version) >= 0) {
-			base <- archiveVersions[ii, "base"]
-			name <- paste(package, "_", version, ".tar.gz", sep="")
-			url <- paste(base, "/", package, "/", name, sep="")
-			if(url.exists(url)) {
-				return(c(package, url, paste(archiveVersions[ii, "source"], "Archive", sep="")))
+		# check if any of these is good in reverse order
+		for(ii in nrow(archiveVersions):1) {
+			version <- archiveVersions[ii, "version"]
+			if(compareVersion(data$minV, version) <=0 && compareVersion(data$maxV, version) >= 0) {
+				base <- archiveVersions[ii, "base"]
+				name <- paste(package, "_", version, ".tar.gz", sep="")
+				url <- paste(base, "/", package, "/", name, sep="")
+				if(url.exists(url)) {
+					return(c(package, url, paste(archiveVersions[ii, "source"], "Archive", sep="")))
+				}
 			}
 		}
 	}
 	# no hit was found...
-	print(paste("NOT FOUND DEPENDENCY:", package))
 	return(c(package, "-1", ""))
 }
 
@@ -389,8 +394,13 @@ print("3) getting URLs of source packages... 2/2")
 urlsDep <- getDownloadURLs(depVersions, packageCRANInfo, cransList, archiveList)
 # remove not found onces (might cause problems during install!)
 urls <- rbind(urls, urlsDep)
+missing <- urls[urls$url == "-1", ]
 urls <- urls[urls$url != "-1", ]
 urls <- unique(urls)
+if(nrow(missing) > 0) {
+	print(paste("found no source for these ", nrow(missing), " packages:", sep=""))
+	print(missing$name)
+}
 
 # print stats
 print(paste("4) downloading ", nrow(urls), " packages from these sources:", sep=""))
