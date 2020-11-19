@@ -17,7 +17,7 @@ SCR_PATH="$SCR_PATH/src/"
 #### 1) create local source repository
 ```
 PACKAGE_DIR="/tmp/packagesR/"
-Rscript "$SCR_PATH/buildLocalRepo.R" -r "$PACKAGE_DIR"`
+Rscript "$SCR_PATH/buildLocalRepo.R" -r "$PACKAGE_DIR"
 ```
 packages are obtained by default from
 - https://cran.r-project.org/src/contrib/
